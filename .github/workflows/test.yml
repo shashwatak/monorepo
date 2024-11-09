@@ -1,0 +1,57 @@
+name: bigtwo
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  bigtwo-build-test:
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cd bigtwo; cargo build --verbose
+    - name: Run tests
+      run: cd bigtwo; cargo test --verbose
+    - name: Generate Docs
+      run: cd bigtwo; cargo doc --verbose
+    - name: Make Index HTML
+      run: echo "<meta http-equiv=\"refresh\" content=\"0; url=bigtwo\">" > bigtwo/target/doc/index.html
+    - name: Upload Docs as Artifact
+      uses:  actions/upload-pages-artifact@v1
+      with:
+        path: bigtwo/target/doc/
+    - name: Deploy Docs Artifact to Github Pages
+      id: deployment
+      uses: actions/deploy-pages@v1
+
+  lobby-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "26.0.2"
+          gleam-version: "1.5.1"
+          rebar3-version: "3"
+          # elixir-version: "1.15.4"
+      - run: cd lobby; gleam deps download
+      - run: cd lobby; gleam test
+      - run: cd lobby; gleam format --check src test
