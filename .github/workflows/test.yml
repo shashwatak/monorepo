@@ -42,7 +42,7 @@ jobs:
       id: deployment
       uses: actions/deploy-pages@v1
 
-  lobby-test:
+  matchmaker-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -52,6 +52,6 @@ jobs:
           gleam-version: "1.5.1"
           rebar3-version: "3"
           # elixir-version: "1.15.4"
-      - run: cd lobby; gleam deps download
-      - run: cd lobby; gleam test
-      - run: cd lobby; gleam format --check src test
+      - run: cd matchmaker; gleam deps download
+      - run: cd matchmaker; gleam test
+      - run: cd matchmaker; gleam format --check src test

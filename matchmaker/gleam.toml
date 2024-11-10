@@ -1,11 +1,11 @@
-name = "lobby"
+name = "matchmaker"
 version = "1.0.0"
 
 # Fill out these fields if you intend to generate HTML documentation or publish
 # your project to the Hex package manager.
 #
-# description = ""
-# licences = ["Apache-2.0"]
+description = "http matchmaker for starting / joining big 2 games"
+licences = ["MIT"]
 # repository = { type = "github", user = "", repo = "" }
 # links = [{ title = "Website", href = "" }]
 #
@@ -17,6 +17,7 @@ gleam_stdlib = ">= 0.34.0 and < 2.0.0"
 gleam_erlang = ">= 0.28.0 and < 1.0.0"
 mist = ">= 3.0.0 and < 4.0.0"
 wisp = ">= 1.2.0 and < 2.0.0"
+gleam_http = ">= 3.7.0 and < 4.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
