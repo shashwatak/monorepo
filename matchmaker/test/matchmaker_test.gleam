@@ -49,7 +49,7 @@ pub fn submit_missing_parameters_test() {
 
 pub fn submit_successful_test() {
   let response =
-    testing.post_form("/", [], [#("title", "Captain"), #("name", "Caveman")])
+    testing.post_form("/", [], [#("play", "AAAAAA")])
     |> router.handle_request()
 
   response.status
@@ -60,5 +60,6 @@ pub fn submit_successful_test() {
 
   response
   |> testing.string_body
-  |> should.equal("Hi, Captain Caveman!")
+  |> string.contains("you played AAAAAA")
+  |> should.equal(True)
 }
