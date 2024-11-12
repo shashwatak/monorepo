@@ -36,6 +36,15 @@ impl Default for Player {
     }
 }
 
+pub const fn make_player() -> Player {
+    Player {
+        cards: vec![],
+        submit_hand: PLAY_SMALLEST_SINGLE_OR_PASS,
+        start_game: USE_THREE_OF_CLUBS,
+        start_trick: START_TRICK_WITH_SMALLEST_SINGLE,
+    }
+}
+
 /// useful for printing
 fn cards_to_string(cards: &[Card]) -> String {
     cards.iter().map(|card| format!("|{}|", card)).collect()

@@ -38,7 +38,7 @@ pub fn perform_game() {
 
 /// Shuffle and Deal the cards just like a regular human dealer.
 /// All players will receive 13 Cards each.
-fn shuffle_and_deal_cards(players: &mut [Player; NUM_PLAYERS], mut deck: Deck) {
+pub fn shuffle_and_deal_cards(players: &mut [Player; NUM_PLAYERS], mut deck: Deck) {
     println!("Dealing Cards...");
     use rand::seq::SliceRandom;
     use rand::thread_rng;
@@ -59,11 +59,23 @@ fn shuffle_and_deal_cards(players: &mut [Player; NUM_PLAYERS], mut deck: Deck) {
 
 ///  Used to identify the player who was dealt the Three Of Clubs.
 ///  The game can only begin with the player that has the Three of Clubs.
-fn find_player_with_three_of_clubs(players: &[Player; NUM_PLAYERS]) -> usize {
+pub fn find_player_with_three_of_clubs(players: &[Player; NUM_PLAYERS]) -> usize {
     for (index, player) in players.iter().enumerate() {
         if player.cards.contains(&THREE_OF_CLUBS) {
             return index;
         }
     }
     unreachable!();
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_demo() {
+        // let out = perform_game_demo();
+        // assert!(out.len() > 0);
+    }
 }
