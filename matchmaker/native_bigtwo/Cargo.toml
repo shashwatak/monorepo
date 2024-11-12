@@ -10,4 +10,5 @@ path = "src/lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
+bigtwo = { version = "0.1.0", path = "../../bigtwo" }
 rustler = "0.34.0"
