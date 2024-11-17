@@ -1,75 +1,21 @@
 //! Represents a player in the game, could be AI or User.
 
-mod get_ai_input;
-mod get_cli_user_input;
-
 use std::collections::BTreeSet;
 use std::fmt::Display;
 
-use get_ai_input::{
-    PLAY_SMALLEST_SINGLE_OR_PASS, START_TRICK_WITH_SMALLEST_SINGLE, USE_THREE_OF_CLUBS,
-};
-use get_cli_user_input::get_cli_user_input;
-
 use crate::{card::Card, hand::Hand};
 
-/// Represents a player in the game, could be AI or User.
-/// We use settable Function-Pointers / Closures to change from AI to User.
-/// NOTE: Using settable Function-Pointers instead of Traits/Generics because
-/// it's just a bit easier for me right now.
+use serde::{Deserialize, Serialize};
+
+/// Represents a player in the game.
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Player {
     pub cards: Vec<Card>,
-    pub submit_hand: fn(&Hand, &Vec<Card>) -> Hand,
-    pub start_game: fn(&Vec<Card>) -> Hand,
-    pub start_trick: fn(&Vec<Card>) -> Hand,
-}
-
-impl Default for Player {
-    /// Returns an AI Player with the defult movesets.
-    fn default() -> Self {
-        Self {
-            cards: vec![],
-            submit_hand: PLAY_SMALLEST_SINGLE_OR_PASS,
-            start_game: USE_THREE_OF_CLUBS,
-            start_trick: START_TRICK_WITH_SMALLEST_SINGLE,
-        }
-    }
-}
-
-pub const fn make_player() -> Player {
-    Player {
-        cards: vec![],
-        submit_hand: PLAY_SMALLEST_SINGLE_OR_PASS,
-        start_game: USE_THREE_OF_CLUBS,
-        start_trick: START_TRICK_WITH_SMALLEST_SINGLE,
-    }
 }
 
 /// useful for printing
 fn cards_to_string(cards: &[Card]) -> String {
     cards.iter().map(|card| format!("|{}|", card)).collect()
-}
-
-impl Player {
-    /// Use this to transform any player from default AI into a User that
-    /// accepts inputs from stdin.
-    pub fn convert_to_stdio_user(&mut self) {
-        self.submit_hand = |_, cards| {
-            println!("=== Your Turn.");
-            println!("=== {}", cards_to_string(cards));
-            get_cli_user_input(&mut std::io::stdin().lock())
-        };
-        self.start_game = |cards| {
-            println!("=== Please start the game using the |3C|.");
-            println!("=== {}", cards_to_string(cards));
-            get_cli_user_input(&mut std::io::stdin().lock())
-        };
-        self.start_trick = |cards| {
-            println!("=== Please start the trick by playing any valid hand.");
-            println!("=== {}", cards_to_string(cards));
-            get_cli_user_input(&mut std::io::stdin().lock())
-        };
-    }
 }
 
 impl Display for Player {
