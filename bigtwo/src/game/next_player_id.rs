@@ -33,7 +33,7 @@ pub fn next_player_id(
 mod tests {
 
     use super::*;
-    use crate::trick::NUM_PLAYERS;
+    use crate::game::NUM_PLAYERS;
 
     #[test]
     fn test_next_player_id() {

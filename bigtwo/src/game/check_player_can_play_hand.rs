@@ -37,44 +37,42 @@ impl Display for PlayHandError {
 /// Checks if a specified Player can actually play the Hand they are attempting to play.
 /// Returns () if the Hand is playable, otherwise returns a specific PlayHandError.
 pub fn check_player_can_play_hand(
-    current: Option<&Hand>,
+    last_played_hand: Option<&Hand>,
     player: &Player,
     attempt: &Hand,
 ) -> Result<(), PlayHandError> {
-    // player is allowed to pass
-
     if let Hand::Pass = attempt {
-        return Ok(_);
-    }
-
-    // must play three of clubs to start game
-    if let None = current {
+        // player is always allowed to pass
+        Ok(())
+    } else if !player.has_cards(attempt) {
+        // player may only play cards they possess
+        Err(PlayHandError::StolenCards)
+    } else if let Some(last) = last_played_hand {
+        // use non-derived custom order to decide if Hand is playable on top of
+        //
+        let ordering = order(last, attempt);
+        match ordering {
+            Some(std::cmp::Ordering::Greater) => Err(PlayHandError::TooLow),
+            None => Err(PlayHandError::NotMatching),
+            _ => Ok(()),
+        }
+    } else {
+        // must play three of clubs to start game
         let c = attempt.cards().last().unwrap();
         if c == &THREE_OF_CLUBS {
-            return Ok(());
+            Ok(())
         } else {
-            return Err(PlayHandError::NotThreeOfClubsToStartGame);
+            Err(PlayHandError::NotThreeOfClubsToStartGame)
         }
-    }
-
-    // player may only play cards they possess
-    if !player.has_cards(attempt) {
-        return Err(PlayHandError::StolenCards);
-    }
-
-    // use non-derived custom order to decide if Hand is playable
-    let ordering = order(current, attempt);
-    match ordering {
-        Some(std::cmp::Ordering::Greater) => Err(PlayHandError::TooLow),
-        None => Err(PlayHandError::NotMatching),
-        _ => Ok(()),
     }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use std::{assert_matches, str::FromStr};
+    // use std::{assert_matches, str::FromStr};
+
+    use std::str::FromStr;
 
     use super::*;
     use crate::tests::test_util::vec_card_from_str;
@@ -82,6 +80,9 @@ mod tests {
     #[test]
     fn test_check_player_can_play_hand() {
         // start game w/ no hand to beat
+        let player = Player {
+            cards: vec_card_from_str("3C 3S"),
+        };
 
         let hand: Hand = "3S".parse().unwrap();
         let res = check_player_can_play_hand(None, &player, &hand);
@@ -92,10 +93,10 @@ mod tests {
 
         let hand: Hand = "3C".parse().unwrap();
         let res = check_player_can_play_hand(None, &player, &hand);
-        assert!(matches!(res, Ok()));
+        assert!(matches!(res, Ok(_)));
 
         // new trick begins with a Three of Clubs (ostensibly by player 0),
-        let hand_to_beat = Hand::from_str("3C").expect(Hand);
+        let hand_to_beat = Hand::from_str("3C").unwrap();
 
         // player has a few cards
         let cards = vec_card_from_str("3D 3S 4H 4D 4S");

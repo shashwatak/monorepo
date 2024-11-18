@@ -1,5 +1,6 @@
 #![doc = include_str!("../../README.md")]
-use bigtwo::game::{check_player_can_play_hand, Game};
+use bigtwo::game::{check_player_can_play_hand::*, Game};
+
 use bigtwo::player::Player;
 // mod card;
 // mod deck;
@@ -22,12 +23,15 @@ fn main() {
     loop {
         let player: &mut Player = &mut game.players[game.current_player_idx];
         let hand = match game.current_player_idx {
-            0 => {
+            0 => loop {
                 let hand = get_player_turn(player);
-                if let Ok(_) = check_player_can_play_hand() {
-                    hand
+                if let Err(e) = check_player_can_play_hand(game.played_hands.last(), player, &hand)
+                {
+                    print!("cannot play: {:?}", e);
+                    continue;
                 }
-            }
+                return hand;
+            },
             _ => game.get_npc_turn(),
         };
         game.step(hand);

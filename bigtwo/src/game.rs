@@ -1,16 +1,14 @@
 //! Run the entire Game Loop.
 
-use serde::Serialize;
+// use serde::Serialize;
 
-mod check_player_can_play_hand;
-use check_player_can_play_hand::check_player_can_play_hand;
+pub mod check_player_can_play_hand;
 
 mod next_player_id;
 use next_player_id::next_player_id;
 
-use crate::card::{Card, THREE_OF_CLUBS};
+use crate::card::THREE_OF_CLUBS;
 use crate::deck::Deck;
-use crate::hand::try_from::*;
 use crate::hand::Hand;
 use crate::player::get_ai_input::*;
 use crate::player::Player;
@@ -26,7 +24,7 @@ pub const NUM_PLAYERS: usize = 4;
 pub struct Game {
     /// history of all hands played by all players.
     /// the final played hand is the winner.
-    pub played_hands: Vec<(usize, Hand)>,
+    pub played_hands: Vec<Hand>,
 
     /// players, and their cards
     pub players: [Player; NUM_PLAYERS],
@@ -40,11 +38,11 @@ pub struct Game {
 
 impl Default for Game {
     fn default() -> Self {
-        let mut deck: Deck = Deck::new();
-        let mut players: [Player; NUM_PLAYERS];
+        let deck: Deck = Deck::new();
+        let mut players: [Player; NUM_PLAYERS] = <[Player; NUM_PLAYERS]>::default();
         shuffle_and_deal_cards(&mut players, deck);
         let starting_player = find_player_with_three_of_clubs(&players);
-        let mut game = Game {
+        let game = Game {
             played_hands: vec![],
             players,
             current_player_idx: starting_player,
@@ -57,8 +55,8 @@ impl Default for Game {
 
 impl Game {
     pub fn get_npc_turn(&mut self) -> Hand {
-        let mut player: &Player = &self.players[self.current_player_idx];
-        if let Some((_, hand)) = self.played_hands.last() {
+        let player: &Player = &self.players[self.current_player_idx];
+        if let Some(hand) = self.played_hands.last() {
             if self.passed_player_idxs.len() == NUM_PLAYERS - 1 {
                 start_trick_with_lowest_single(&player.cards)
             } else {
@@ -80,22 +78,22 @@ impl Game {
 
 /// Returned at the end of each Player's turn, informs the caller whether the Trick has ended (and
 /// how), or ig the Trick continues
-#[derive(Debug)]
-enum StepStatus {
-    /// Informs the caller that the previous attempted move failed.
-    Retry,
+// #[derive(Debug)]
+// enum StepStatus {
+//     /// Informs the caller that the previous attempted move failed.
+//     Retry,
 
-    /// Informs the caller that this Trick is not over, returns the next player
-    /// id.
-    Continue,
+//     /// Informs the caller that this Trick is not over, returns the next player
+//     /// id.
+//     Continue,
 
-    /// Informs the caller that this Trick ended without anybody winning the Game, so another Trick
-    /// is needed.
-    TrickOver(usize),
+//     /// Informs the caller that this Trick ended without anybody winning the Game, so another Trick
+//     /// is needed.
+//     TrickOver(usize),
 
-    /// Informs the caller that this Trick ended with somebody winning the Game.
-    GameOver(usize),
-}
+//     /// Informs the caller that this Trick ended with somebody winning the Game.
+//     GameOver(usize),
+// }
 
 /// Shuffle and Deal the cards just like a regular human dealer.
 /// All players will receive 13 Cards each.
@@ -137,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_get_user_input() {
-        let input = "3C";
+        // let input = "3C";
         let cards = vec_card_from_str("3C 3D 3S 4H 4D 4S");
         let mut player = Player::default();
         player.cards = cards;

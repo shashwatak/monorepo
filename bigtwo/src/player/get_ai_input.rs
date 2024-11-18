@@ -13,11 +13,12 @@ pub fn play_three_of_clubs(cards: &Vec<Card>) -> Hand {
             } else {
                 Hand::Lone(a)
             }
-        } // _ => panic!("oop"),
+        }
+        _ => unreachable!(),
     }
 }
 
-pub fn play_smallest_single_or_pass(hand: &Hand, cqrds: &Vec<Card>) -> Hand {
+pub fn play_smallest_single_or_pass(hand: &Hand, cards: &Vec<Card>) -> Hand {
     if let Hand::Lone(c) = hand {
         for card in cards {
             if card > c {
