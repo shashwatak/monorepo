@@ -1,9 +1,18 @@
 //! Run the entire Game Loop.
 
+use serde::Serialize;
+
+mod check_player_can_play_hand;
+use check_player_can_play_hand::check_player_can_play_hand;
+
+mod next_player_id;
+use next_player_id::next_player_id;
+
 use crate::card::{Card, THREE_OF_CLUBS};
 use crate::deck::Deck;
 use crate::hand::try_from::*;
 use crate::hand::Hand;
+use crate::player::get_ai_input::*;
 use crate::player::Player;
 
 use std::collections::BTreeSet;
@@ -13,12 +22,10 @@ use std::collections::BTreeSet;
 pub const NUM_PLAYERS: usize = 4;
 
 /// Represents the current state of a Game
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Game {
     /// history of all hands played by all players.
     /// the final played hand is the winner.
-    /// anytime the same player plays twice in a raw, is because
-    /// they won the Trick
     pub played_hands: Vec<(usize, Hand)>,
 
     /// players, and their cards
@@ -31,15 +38,43 @@ pub struct Game {
     pub passed_player_idxs: BTreeSet<usize>,
 }
 
+impl Default for Game {
+    fn default() -> Self {
+        let mut deck: Deck = Deck::new();
+        let mut players: [Player; NUM_PLAYERS];
+        shuffle_and_deal_cards(&mut players, deck);
+        let starting_player = find_player_with_three_of_clubs(&players);
+        let mut game = Game {
+            played_hands: vec![],
+            players,
+            current_player_idx: starting_player,
+            passed_player_idxs: BTreeSet::default(),
+        };
+
+        game
+    }
+}
+
 impl Game {
     pub fn get_npc_turn(&mut self) -> Hand {
-        Hand::Pass
+        let mut player: &Player = &self.players[self.current_player_idx];
+        if let Some((_, hand)) = self.played_hands.last() {
+            if self.passed_player_idxs.len() == NUM_PLAYERS - 1 {
+                start_trick_with_lowest_single(&player.cards)
+            } else {
+                play_smallest_single_or_pass(hand, &player.cards)
+            }
+        } else {
+            play_three_of_clubs(&player.cards)
+        }
     }
 
     pub fn step(&mut self, hand: Hand) {
-        self.played_hands.push((self.current_player_idx, hand));
-        self.current_player_idx += 1;
-        self.current_player_idx %= NUM_PLAYERS;
+        self.current_player_idx = next_player_id(
+            self.current_player_idx,
+            &self.passed_player_idxs,
+            NUM_PLAYERS,
+        );
     }
 }
 
@@ -94,71 +129,10 @@ pub fn find_player_with_three_of_clubs(players: &[Player; NUM_PLAYERS]) -> usize
     unreachable!();
 }
 
-/// Represents the possible ways that a string can fail to parse into a reasonable Hand.
-#[derive(Debug)]
-pub enum PlayerError {
-    /// Not able to parse one of the Cards in this string.
-    UnparseableInput(ParseHandError),
-
-    /// Cards not found in players hand.
-    NotPlayerCards,
-
-    /// Attempting to play / pass out of turn
-    NotPlayerTurn,
-}
-
-impl From<ParseHandError> for PlayerError {
-    fn from(e: ParseHandError) -> Self {
-        Self::UnparseableInput(e)
-    }
-}
-
-pub fn check_play(player: &Player, input: &str) -> Result<Hand, PlayerError> {
-    let mut cards = vec![];
-
-    let card_strs: Vec<&str> = input.split_whitespace().collect();
-
-    for card_str in card_strs {
-        let maybe_card = card_str.to_uppercase().parse::<Card>();
-        match maybe_card {
-            Err(e) => {
-                println!("error: could not understand {card_str}, {:?}", e);
-                return Err(PlayerError::UnparseableInput(ParseHandError::BadCard(e)));
-            }
-            Ok(c) => cards.push(c),
-        }
-    }
-
-    cards.sort();
-    cards.reverse();
-
-    if let Err(e) = Hand::sanitize_cards(&cards) {
-        println!("error: sanitize cards failed {:?}", e);
-        return Err(PlayerError::from(e));
-    }
-
-    match Hand::try_from_cards(&cards) {
-        Ok(hand) => {
-            if player.has_cards(&hand) {
-                return Ok(hand);
-            } else {
-                return Err(PlayerError::NotPlayerCards);
-            }
-        }
-        Err(e) => {
-            println!("error: invalid hand {:?}", e);
-            return Err(PlayerError::from(e));
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
     use super::*;
-    use crate::card::rank::*;
-    use crate::card::suit::*;
-    use crate::card::*;
     use crate::tests::test_util::vec_card_from_str;
 
     #[test]
@@ -167,85 +141,5 @@ mod tests {
         let cards = vec_card_from_str("3C 3D 3S 4H 4D 4S");
         let mut player = Player::default();
         player.cards = cards;
-
-        let hand = check_play(&player, input);
-        assert!(matches!(hand, Ok(Hand::Lone(c)) if c == THREE_OF_CLUBS));
-
-        const THREE_OF_DIAMONDS: Card = Card {
-            rank: Rank::Three,
-            suit: Suit::Diamonds,
-        };
-        const THREE_OF_SPADES: Card = Card {
-            rank: Rank::Three,
-            suit: Suit::Spades,
-        };
-
-        let mut input = "3C 3S 3D";
-        let hand = check_play(&player, &input);
-        assert!(
-            matches!(hand, Ok(Hand::Trips(a, b, c)) if a == THREE_OF_SPADES && b == THREE_OF_DIAMONDS && c == THREE_OF_CLUBS,)
-        );
-
-        let mut input = "3G";
-        let hand = check_play(&player, &input);
-        assert!(matches!(
-            hand,
-            Err(PlayerError::UnparseableInput(ParseHandError::BadCard(
-                ParseCardError::BadSuit(suit::ParseSuitError::BadChar(_))
-            )))
-        ));
-
-        //     let expected_cards: [Card; 5] = [
-        //         Card {
-        //             rank: Rank::Seven,
-        //             suit: Suit::Clubs,
-        //         },
-        //         Card {
-        //             rank: Rank::Six,
-        //             suit: Suit::Diamonds,
-        //         },
-        //         Card {
-        //             rank: Rank::Five,
-        //             suit: Suit::Hearts,
-        //         },
-        //         Card {
-        //             rank: Rank::Four,
-        //             suit: Suit::Diamonds,
-        //         },
-        //         THREE_OF_SPADES,
-        //     ];
-        //     let mut input = "3G\n3S 4D\n7C 6D 5H 4D 3S".as_bytes();
-        //     let hand = check_play(&mut input);
-        //     for (idx, card) in hand.cards().enumerate() {
-        //         assert_eq!(*card, expected_cards[idx]);
-        //     }
-
-        //     let expected_cards: [Card; 5] = [
-        //         Card {
-        //             rank: Rank::Ten,
-        //             suit: Suit::Diamonds,
-        //         },
-        //         Card {
-        //             rank: Rank::Eight,
-        //             suit: Suit::Diamonds,
-        //         },
-        //         Card {
-        //             rank: Rank::Six,
-        //             suit: Suit::Diamonds,
-        //         },
-        //         Card {
-        //             rank: Rank::Four,
-        //             suit: Suit::Diamonds,
-        //         },
-        //         Card {
-        //             rank: Rank::Three,
-        //             suit: Suit::Diamonds,
-        //         },
-        //     ];
-        //     let mut input = "3G\n3S 4D\nTD 8D 6D 4D 3D".as_bytes();
-        //     let hand = check_play(&mut input);
-        //     for (idx, card) in hand.cards().enumerate() {
-        //         assert_eq!(*card, expected_cards[idx]);
-        //     }
     }
 }

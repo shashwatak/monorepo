@@ -1,4 +1,6 @@
 //! Checks if a specified Player can actually play the Hand they are attempting to play.
+use crate::card::Card;
+use crate::card::THREE_OF_CLUBS;
 use crate::hand::{order::order, Hand};
 use crate::player::Player;
 
@@ -7,6 +9,9 @@ use std::fmt::{Display, Formatter};
 /// Represents the different ways a Player's attempted Hand is not playable
 #[derive(Debug)]
 pub enum PlayHandError {
+    /// The very first played hand of a game must have the Three Of Clubs
+    NotThreeOfClubsToStartGame,
+
     /// Attempted Hand must be the same number of cards as previous played Hand.
     NotMatching,
 
@@ -21,6 +26,7 @@ pub enum PlayHandError {
 impl Display for PlayHandError {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         match self {
+            Self::NotThreeOfClubsToStartGame => write!(f, "must start game using Three of Clubs"),
             Self::NotMatching => write!(f, "wrong number of cards"),
             Self::TooLow => write!(f, "highest is not high enough"),
             Self::StolenCards => write!(f, "these cards are not in the players hand"),
@@ -31,10 +37,26 @@ impl Display for PlayHandError {
 /// Checks if a specified Player can actually play the Hand they are attempting to play.
 /// Returns () if the Hand is playable, otherwise returns a specific PlayHandError.
 pub fn check_player_can_play_hand(
-    current: &Hand,
+    current: Option<&Hand>,
     player: &Player,
     attempt: &Hand,
 ) -> Result<(), PlayHandError> {
+    // player is allowed to pass
+
+    if let Hand::Pass = attempt {
+        return Ok(_);
+    }
+
+    // must play three of clubs to start game
+    if let None = current {
+        let c = attempt.cards().last().unwrap();
+        if c == &THREE_OF_CLUBS {
+            return Ok(());
+        } else {
+            return Err(PlayHandError::NotThreeOfClubsToStartGame);
+        }
+    }
+
     // player may only play cards they possess
     if !player.has_cards(attempt) {
         return Err(PlayHandError::StolenCards);
@@ -52,13 +74,28 @@ pub fn check_player_can_play_hand(
 #[cfg(test)]
 mod tests {
 
+    use std::{assert_matches, str::FromStr};
+
     use super::*;
     use crate::tests::test_util::vec_card_from_str;
 
     #[test]
     fn test_check_player_can_play_hand() {
+        // start game w/ no hand to beat
+
+        let hand: Hand = "3S".parse().unwrap();
+        let res = check_player_can_play_hand(None, &player, &hand);
+        assert!(matches!(
+            res,
+            Err(PlayHandError::NotThreeOfClubsToStartGame)
+        ));
+
+        let hand: Hand = "3C".parse().unwrap();
+        let res = check_player_can_play_hand(None, &player, &hand);
+        assert!(matches!(res, Ok()));
+
         // new trick begins with a Three of Clubs (ostensibly by player 0),
-        let hand_to_beat = "3C".parse().unwrap();
+        let hand_to_beat = Hand::from_str("3C").expect(Hand);
 
         // player has a few cards
         let cards = vec_card_from_str("3D 3S 4H 4D 4S");
@@ -67,7 +104,7 @@ mod tests {
 
         // plays a Three of Spades
         let hand: Hand = "3S".parse().unwrap();
-        let res = check_player_can_play_hand(&hand_to_beat, &player, &hand);
+        let res = check_player_can_play_hand(Some(&hand_to_beat), &player, &hand);
         assert!(matches!(res, Ok(())));
 
         // update hand
@@ -75,22 +112,22 @@ mod tests {
 
         // incorrectly plays a Three of Diamonds, reject
         let hand: Hand = "3D".parse().unwrap();
-        let res = check_player_can_play_hand(&hand_to_beat, &player, &hand);
+        let res = check_player_can_play_hand(Some(&hand_to_beat), &player, &hand);
         assert!(matches!(res, Err(PlayHandError::TooLow)));
 
         // incorrectly plays a Pair of Fours, reject
         let hand: Hand = "4H 4D".parse().unwrap();
-        let res = check_player_can_play_hand(&hand_to_beat, &player, &hand);
+        let res = check_player_can_play_hand(Some(&hand_to_beat), &player, &hand);
         assert!(matches!(res, Err(PlayHandError::NotMatching)));
 
         // incorrectly plays cards they don't have
         let hand: Hand = "2S".parse().unwrap();
-        let res = check_player_can_play_hand(&hand_to_beat, &player, &hand);
+        let res = check_player_can_play_hand(Some(&hand_to_beat), &player, &hand);
         assert!(matches!(res, Err(PlayHandError::StolenCards)));
 
         // passes
         let hand: Hand = "".parse().unwrap();
-        let res = check_player_can_play_hand(&hand_to_beat, &player, &hand);
+        let res = check_player_can_play_hand(Some(&hand_to_beat), &player, &hand);
         assert!(matches!(res, Ok(_)));
 
         // loses
@@ -98,14 +135,14 @@ mod tests {
         let cards = vec_card_from_str("7C 6D 5H 4D 3S");
         let hand = Hand::try_from_cards(&cards[..]).unwrap();
         player.cards = cards;
-        let res = check_player_can_play_hand(&hand_to_beat, &player, &hand);
+        let res = check_player_can_play_hand(Some(&hand_to_beat), &player, &hand);
         assert!(matches!(res, Err(PlayHandError::TooLow)));
 
         // wins
         let cards = vec_card_from_str("7S 6D 5H 4D 3S");
         let hand = Hand::try_from_cards(&cards[..]).unwrap();
         player.cards = cards;
-        let res = check_player_can_play_hand(&hand_to_beat, &player, &hand);
+        let res = check_player_can_play_hand(Some(&hand_to_beat), &player, &hand);
         assert!(matches!(res, Ok(_)));
     }
 }

@@ -1,14 +1,15 @@
 #![doc = include_str!("../../README.md")]
-use bigtwo::game::{check_play, Game};
+use bigtwo::game::{check_player_can_play_hand, Game};
 use bigtwo::player::Player;
 // mod card;
 // mod deck;
-use bigtwo::hand::Hand;
+use bigtwo::hand::{self, Hand};
 // mod player;
 // mod trick;
 
 // use bigtwo::game::perform_game;
 use std::io;
+use std::str::FromStr;
 
 fn main() {
     println!("-------------------");
@@ -21,7 +22,12 @@ fn main() {
     loop {
         let player: &mut Player = &mut game.players[game.current_player_idx];
         let hand = match game.current_player_idx {
-            0 => get_player_turn(player),
+            0 => {
+                let hand = get_player_turn(player);
+                if let Ok(_) = check_player_can_play_hand() {
+                    hand
+                }
+            }
             _ => game.get_npc_turn(),
         };
         game.step(hand);
@@ -38,6 +44,7 @@ fn get_player_turn(player: &mut Player) -> Hand {
                 // Trim the newline and print the input
                 let trimmed_input = input.trim();
                 println!("You entered: {}", trimmed_input);
+                if let Ok(hand) = Hand::from_str(trimmed_input) {}
                 match check_play(player, trimmed_input) {
                     Ok(hand) => player.remove_hand_from_cards(&hand),
                     Err(e) => println!("{:?}", e),
