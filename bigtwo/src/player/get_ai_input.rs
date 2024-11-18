@@ -1,7 +1,7 @@
 use crate::card::{Card, THREE_OF_CLUBS};
 use crate::hand::Hand;
 
-pub const USE_THREE_OF_CLUBS: fn(&Vec<Card>) -> Hand = |cards| {
+pub fn play_three_of_clubs(cards: &Vec<Card>) -> Hand {
     assert_eq!(cards[0], THREE_OF_CLUBS);
 
     match cards[..] {
@@ -13,12 +13,11 @@ pub const USE_THREE_OF_CLUBS: fn(&Vec<Card>) -> Hand = |cards| {
             } else {
                 Hand::Lone(a)
             }
-        }
-        _ => panic!("oop"),
+        } // _ => panic!("oop"),
     }
-};
+}
 
-pub const PLAY_SMALLEST_SINGLE_OR_PASS: fn(&Hand, &Vec<Card>) -> Hand = |hand, cards| {
+pub fn play_smallest_single_or_pass(hand: &Hand, cqrds: &Vec<Card>) -> Hand {
     if let Hand::Lone(c) = hand {
         for card in cards {
             if card > c {
@@ -27,9 +26,11 @@ pub const PLAY_SMALLEST_SINGLE_OR_PASS: fn(&Hand, &Vec<Card>) -> Hand = |hand, c
         }
     }
     Hand::Pass
-};
+}
 
-pub const START_TRICK_WITH_SMALLEST_SINGLE: fn(&Vec<Card>) -> Hand = |cards| Hand::Lone(cards[0]);
+pub fn start_trick_with_lowest_single(cards: &Vec<Card>) -> Hand {
+    Hand::Lone(cards[0])
+}
 
 #[cfg(test)]
 mod tests {
@@ -42,7 +43,7 @@ mod tests {
     fn test_play_smallest_single_or_pass() {
         let hand_to_beat: Hand = "4H".parse().unwrap();
         let player_cards = vec_card_from_str("4D 4S 5C");
-        let hand = (PLAY_SMALLEST_SINGLE_OR_PASS)(&hand_to_beat, &player_cards);
+        let hand = play_smallest_single_or_pass(&hand_to_beat, &player_cards);
         assert!(matches!(
             hand,
             Hand::Lone(Card {
@@ -53,27 +54,27 @@ mod tests {
 
         let hand_to_beat: Hand = "4H 4C".parse().unwrap();
         let player_cards = vec_card_from_str("4D 4S 5C");
-        let hand = (PLAY_SMALLEST_SINGLE_OR_PASS)(&hand_to_beat, &player_cards);
+        let hand = play_smallest_single_or_pass(&hand_to_beat, &player_cards);
         assert!(matches!(hand, Hand::Pass));
 
         let hand_to_beat: Hand = "6C".parse().unwrap();
         let player_cards = vec_card_from_str("4D 4S 5C");
-        let hand = (PLAY_SMALLEST_SINGLE_OR_PASS)(&hand_to_beat, &player_cards);
+        let hand = play_smallest_single_or_pass(&hand_to_beat, &player_cards);
         assert!(matches!(hand, Hand::Pass));
     }
 
     #[test]
-    fn test_use_three_of_clubs() {
+    fn test_play_three_of_clubs() {
         let cards = vec_card_from_str("3C 4C 5D 2S");
-        let hand = USE_THREE_OF_CLUBS(&cards);
+        let hand = play_three_of_clubs(&cards);
         assert!(matches!(hand, Hand::Lone(a) if a == THREE_OF_CLUBS));
 
         let cards = vec_card_from_str("3C 3D 5D 2S");
-        let hand = USE_THREE_OF_CLUBS(&cards);
+        let hand = play_three_of_clubs(&cards);
         assert!(matches!(hand, Hand::Pair(_, a) if a == THREE_OF_CLUBS));
 
         let cards = vec_card_from_str("3C 3D 3S 2S");
-        let hand = USE_THREE_OF_CLUBS(&cards);
+        let hand = play_three_of_clubs(&cards);
         assert!(matches!(hand, Hand::Trips(_, _, a) if a == THREE_OF_CLUBS));
     }
 }

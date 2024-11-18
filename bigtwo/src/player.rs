@@ -1,4 +1,5 @@
 //! Represents a player in the game, could be AI or User.
+pub mod get_ai_input;
 
 use std::collections::BTreeSet;
 use std::fmt::Display;
