@@ -1,5 +1,8 @@
 #![doc = include_str!("../../README.md")]
-use bigtwo::game::{check_player_can_play_hand::*, Game};
+use bigtwo::game::{
+    check_player_can_play_hand::{self, *},
+    Game,
+};
 
 use bigtwo::player::Player;
 // mod card;
@@ -23,22 +26,14 @@ fn main() {
     loop {
         let player: &mut Player = &mut game.players[game.current_player_idx];
         let hand = match game.current_player_idx {
-            0 => loop {
-                let hand = get_player_turn(player);
-                if let Err(e) = check_player_can_play_hand(game.played_hands.last(), player, &hand)
-                {
-                    print!("cannot play: {:?}", e);
-                    continue;
-                }
-                return hand;
-            },
+            0 => get_player_turn(player, game.played_hands.last()),
             _ => game.get_npc_turn(),
         };
         game.step(hand);
     }
 }
 
-fn get_player_turn(player: &mut Player) -> Hand {
+fn get_player_turn(player: &mut Player, last: Option<&Hand>) -> Hand {
     loop {
         let mut input = String::new();
         print!("=== > ");
@@ -48,10 +43,20 @@ fn get_player_turn(player: &mut Player) -> Hand {
                 // Trim the newline and print the input
                 let trimmed_input = input.trim();
                 println!("You entered: {}", trimmed_input);
-                if let Ok(hand) = Hand::from_str(trimmed_input) {}
-                match check_play(player, trimmed_input) {
-                    Ok(hand) => player.remove_hand_from_cards(&hand),
-                    Err(e) => println!("{:?}", e),
+                let maybe_hand = Hand::from_str(trimmed_input);
+                match maybe_hand {
+                    Ok(hand) => {
+                        let maybe_ok = check_player_can_play_hand(last, player, &hand);
+                        match maybe_ok {
+                            Ok(_) => return hand,
+                            Err(e) => {
+                                print!("cannot play: {:?}", e);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        print!("cannot parse: {:?}", e);
+                    }
                 }
             }
             Err(error) => {
