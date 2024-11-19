@@ -191,7 +191,8 @@ impl FromStr for Hand {
     type Err = ParseHandError;
 
     fn from_str(hand_str: &str) -> Result<Hand, Self::Err> {
-        let hand_str = hand_str.trim();
+        let mut hand_str: String = hand_str.trim().to_string();
+        hand_str.retain(|c| !r#"(),".;:'|"#.contains(c));
         if hand_str.is_empty() {
             return Ok(Hand::Pass);
         }

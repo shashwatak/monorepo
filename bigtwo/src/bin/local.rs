@@ -1,19 +1,8 @@
 #![doc = include_str!("../../README.md")]
-use bigtwo::game::{
-    check_player_can_play_hand::{self, *},
-    Game,
-};
 
-use bigtwo::player::Player;
-// mod card;
-// mod deck;
-use bigtwo::hand::{self, Hand};
-// mod player;
-// mod trick;
+use bigtwo::game::Game;
 
-// use bigtwo::game::perform_game;
 use std::io;
-use std::str::FromStr;
 
 fn main() {
     println!("-------------------");
@@ -24,43 +13,33 @@ fn main() {
     let mut game = Game::default();
 
     loop {
-        let player: &mut Player = &mut game.players[game.current_player_idx];
-        let hand = match game.current_player_idx {
-            0 => get_player_turn(player, game.played_hands.last()),
-            _ => game.get_npc_turn(),
+        let input = match game.current_player_idx {
+            0 => {
+                println!(
+                    "Your remaining cards: {}",
+                    game.players[game.current_player_idx].cards
+                );
+                get_player_turn()
+            }
+            _ => game.get_npc_turn().to_string(),
         };
-        game.step(hand);
+        game.step(input.as_str());
     }
 }
 
-fn get_player_turn(player: &mut Player, last: Option<&Hand>) -> Hand {
+fn get_player_turn() -> String {
     loop {
         let mut input = String::new();
         print!("=== > ");
-
         match io::stdin().read_line(&mut input) {
             Ok(_) => {
                 // Trim the newline and print the input
                 let trimmed_input = input.trim();
                 println!("You entered: {}", trimmed_input);
-                let maybe_hand = Hand::from_str(trimmed_input);
-                match maybe_hand {
-                    Ok(hand) => {
-                        let maybe_ok = check_player_can_play_hand(last, player, &hand);
-                        match maybe_ok {
-                            Ok(_) => return hand,
-                            Err(e) => {
-                                print!("cannot play: {:?}", e);
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        print!("cannot parse: {:?}", e);
-                    }
-                }
+                return trimmed_input.to_string();
             }
-            Err(error) => {
-                eprintln!("Error reading input: {}", error);
+            Err(e) => {
+                eprintln!("Error reading input {}", e);
             }
         }
     }
