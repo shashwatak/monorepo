@@ -59,6 +59,15 @@ impl Default for Game {
 }
 
 impl Game {
+    pub fn is_on(&self) -> bool {
+        for player in &self.players {
+            if player.cards.is_empty() {
+                return false;
+            }
+        }
+        return true;
+    }
+
     pub fn step(&mut self, input: &str) {
         let maybe_hand = Hand::from_str(input);
         if let Err(e) = maybe_hand {

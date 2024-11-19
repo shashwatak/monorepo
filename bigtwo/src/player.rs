@@ -4,7 +4,7 @@ pub mod get_ai_input;
 use std::collections::BTreeSet;
 use std::fmt::Display;
 
-use crate::{card::Card, hand::Hand};
+use crate::{card::cards_to_string, card::Card, hand::Hand};
 
 use serde::{Deserialize, Serialize};
 
@@ -12,11 +12,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Player {
     pub cards: Vec<Card>,
-}
-
-/// useful for printing
-fn cards_to_string(cards: &[Card]) -> String {
-    cards.iter().map(|card| format!("|{}|", card)).collect()
 }
 
 impl Display for Player {

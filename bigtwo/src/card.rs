@@ -33,6 +33,11 @@ impl fmt::Display for Card {
     }
 }
 
+/// useful for printing
+pub fn cards_to_string(cards: &[Card]) -> String {
+    cards.iter().map(|card| format!("|{}|", card)).collect()
+}
+
 /// Represents the possible errors from attempting to parse a Card from a string.
 #[derive(Debug)]
 pub enum ParseCardError {

@@ -1,5 +1,6 @@
 #![doc = include_str!("../../README.md")]
 
+use bigtwo::card::cards_to_string;
 use bigtwo::game::Game;
 
 use std::io;
@@ -12,12 +13,12 @@ fn main() {
 
     let mut game = Game::default();
 
-    loop {
+    while game.is_on() {
         let input = match game.current_player_idx {
             0 => {
                 println!(
                     "Your remaining cards: {}",
-                    game.players[game.current_player_idx].cards
+                    cards_to_string(&game.players[game.current_player_idx].cards)
                 );
                 get_player_turn()
             }
