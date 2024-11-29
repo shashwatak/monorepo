@@ -4,7 +4,7 @@ use crate::card::THREE_OF_CLUBS;
 use crate::hand::{order::order, Hand};
 use crate::player::Player;
 
-use std::fmt::{Display, Formatter};
+use std::fmt::Display;
 
 /// Represents the different ways a Player's attempted Hand is not playable
 #[derive(Debug)]
@@ -27,7 +27,7 @@ pub enum PlayHandError {
 }
 
 impl Display for PlayHandError {
-    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::NotThreeOfClubsToStartGame => write!(f, "must start game using Three of Clubs"),
             Self::PassedOnTrickStart => write!(f, "cannot pass at the start of a trick"),

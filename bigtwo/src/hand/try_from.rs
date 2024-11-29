@@ -8,6 +8,8 @@ use crate::card::Card;
 use crate::card::ParseCardError;
 use crate::hand::Hand;
 
+use std::fmt::{Display, Formatter};
+
 /// Represents the possible ways that a string can fail to parse into a reasonable Hand.
 #[derive(Debug)]
 pub enum ParseHandError {
@@ -24,6 +26,17 @@ pub enum ParseHandError {
 impl From<ParseCardError> for ParseHandError {
     fn from(e: ParseCardError) -> Self {
         Self::BadCard(e)
+    }
+}
+
+impl Display for ParseHandError {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        match self {
+            Self::BadCard(_) => write!(f, "{:?}", self),
+            Self::DuplicateCard => write!(f, "{:?}", self),
+            Self::NotSortedDescending => write!(f, "{:?}", self),
+            Self::InvalidHand(_) => write!(f, "{:?}", self),
+        }
     }
 }
 

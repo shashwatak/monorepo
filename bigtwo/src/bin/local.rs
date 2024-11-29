@@ -24,7 +24,9 @@ fn main() {
             }
             _ => game.get_npc_turn().to_string(),
         };
-        game.step(input.as_str());
+        if let Err(e) = game.step(input.as_str()) {
+            println!("{}", e);
+        }
     }
 }
 
