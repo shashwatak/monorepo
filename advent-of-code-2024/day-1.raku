@@ -22,4 +22,12 @@ for @a Z @b -> ($i, $j) {
   $dist += $d;
 }
 
-say $dist;
+say "dist: $dist";
+
+my $simi = 0;
+
+for @a -> $i {
+  $simi += ($i * (@b.Bag{$i} // 0));
+}
+
+say "similarity: $simi";
