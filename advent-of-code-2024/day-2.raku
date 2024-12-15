@@ -61,6 +61,26 @@ sub brute_force(@report) {
   return False;
 }
 
+
+sub diffs(@report) {
+  my @diffs = [];
+  my $count = @report.elems;
+  for 0..^$count-1 -> $i {
+    my $diff = @report[$i+1] - @report[$i];
+    @diffs.append($diff);
+  }
+  return @diffs;
+}
+
+sub smarter(@report) {
+    my @diffs = diffs(@report);
+    my $abs = all(@diffs.map(*.abs));
+    my $dirs = set(@diffs.map(*.sign));
+    return $abs <= 3 && $abs >= 1 && $dirs.elems == 1;
+}
+
+
+
 my @tests = [
           [7, 6, 4, 2, 1], # Safe without removing any level.
           [1, 2, 7, 8, 9], # Unsafe regardless of which level is removed.
@@ -83,26 +103,29 @@ for @tests -> @test {
   brute_force(@test);
 }
 
+for @tests -> @test {
+  smarter(@test);
+}
+
 my $count = 0;
 my $countSkip = 0;
 my $countBrute = 0;
+my $countSmart = 0;
 
 my @reports = (open 'day-2-input.txt').lines.map(*.split(' ').map(*.Int));
 
 for @reports -> @report {
-  my $res = analyze(@report);
-  if $res {$count++;}
-  my $res2 = analyze(@report, True);
-  if $res2 {$countSkip++;}
-  my $res3 = brute_force(@report);
-  if $res3 {$countBrute++;}
+  if analyze(@report) {$count++;}
+  if analyze(@report, True) {$countSkip++;}
+  if brute_force(@report) {$countBrute++;}
+  if smarter(@report) {$countSmart++;}
 
-  say @report, $res2 if $res2 != $res3;
 }
 
 say $count;
 say $countSkip;
 say $countBrute;
+say $countSmart;
 
 
 ## These were the ones analyze w/ skip got wrong
