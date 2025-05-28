@@ -1,0 +1,4 @@
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "ceres-solver", version = "2.2.0")
+bazel_dep(name = "eigen", version = "4.0.0-20241125.bcr.1")
+bazel_dep(name = "osqp-eigen", version = "0.10.0")

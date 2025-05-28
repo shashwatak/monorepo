@@ -1,0 +1,13 @@
+
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+cc_binary(
+    name = "ceres",
+    deps = ["@ceres-solver//:ceres"],
+    srcs = ["ceres.cpp"],
+)
+cc_binary(
+    name = "osqp",
+    deps = ["@osqp-eigen//:osqp-eigen"],
+    srcs = ["osqp.cpp"],
+)
