@@ -1,6 +1,7 @@
 #include <OsqpEigen/OsqpEigen.h>
 #include <iostream> // For debug logging
 #include <optional>
+#include <fstream>
 
 #include <Eigen/Dense>
 #include <vector>
@@ -137,6 +138,22 @@ std::optional<Eigen::MatrixXd> optimizePath(const Eigen::Vector2d& start, const 
     return path;
 }
 
+// Write path waypoints to CSV
+void writePathCSV(const std::string& filename, const Eigen::MatrixXd& path) {
+    std::ofstream file(filename);
+    file << "x,y\n";
+    for (int i = 0; i < path.rows(); ++i) {
+        file << path(i, 0) << "," << path(i, 1) << "\n";
+    }
+}
+
+// Write obstacle as a box to CSV (center, half_extent)
+void writeObstacleCSV(const std::string& filename, const Obstacle& obs) {
+    std::ofstream file(filename);
+    file << "center_x,center_y,half_extent_x,half_extent_y\n";
+    file << obs.center.x() << "," << obs.center.y() << ","
+         << obs.half_extent.x() << "," << obs.half_extent.y() << "\n";
+}
 
 int main()
 {
@@ -147,8 +164,8 @@ int main()
     // Example: fixed start and end points
     Eigen::Vector2d start(0, 0), end(10, 0);
 
-    // 2x2 box centered at (5, 0)
-    Obstacle obs{Eigen::Vector2d(5, 0), Eigen::Vector2d(1, 1)};
+    // 2x2 box centered at (10, 10)
+    Obstacle obs{Eigen::Vector2d(0, 100), Eigen::Vector2d(1, 1)};
 
     // Optimize path
     auto result = optimizePath(start, end, obs, N);
@@ -158,6 +175,13 @@ int main()
         return -1;
     }
     Eigen::MatrixXd sol = *result;
+
+    // Output to CSV
+    writePathCSV("path.csv", sol);
+    writeObstacleCSV("obstacle.csv", obs);
+
+    std::cout << "CSV files written: path.csv, obstacle.csv\n";
+
     std::cout << "Optimized path with " << N << " waypoints:\n";
     std::cout << "Start: (" << start.x() << ", " << start.y() << ")\n";
     std::cout << "End: (" << end.x() << ", " << end.y() << ")\n";
